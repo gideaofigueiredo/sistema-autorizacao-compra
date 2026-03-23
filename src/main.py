@@ -27,7 +27,7 @@ def main(page: ft.Page):
     data = datetime.now().strftime("%d/%m/%Y")
     fornecedor = ft.Dropdown(label = "Fornecedor: ", editable=True, options=[
         ft.DropdownOption(row[1]) for row in pd.DataFrame(wks2.get_all_records()).itertuples()
-    ], align=ft.Alignment.CENTER)
+    ], expand=False, menu_height=300, align=ft.Alignment.CENTER)
     orcamento = ft.TextField(label = "Número do orçamento: ", align=ft.Alignment.CENTER)
     placa = ft.TextField(label = "Placa: ", align=ft.Alignment.CENTER)
     km = ft.TextField(label = "KM: ", align=ft.Alignment.CENTER)
