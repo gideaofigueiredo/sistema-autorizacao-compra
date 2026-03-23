@@ -161,6 +161,7 @@ cython_debug/
 
 # Flet
 storage/
+teste.py
 
 # Credenciais do Google
 creds.json
