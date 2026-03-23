@@ -1,5 +1,7 @@
 # Autcompra app
 
+Aplicativo para emissão de autorização de compra
+
 ## Run the app
 
 ### uv
