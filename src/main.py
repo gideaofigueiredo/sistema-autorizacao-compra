@@ -3,12 +3,13 @@ import gspread
 from datetime import datetime
 from gerarpdf import gerar_pdf
 import os
+import pandas as pd
 
 # AUTENTICACAO
 nome_app = "AutCompraSystem"
 caminho_creds = os.path.join(os.path.join(os.getenv('APPDATA'), nome_app), "creds.json")
 
-# 3. Verifica se a pasta existe, se não, cria (útil na primeira execução)
+# Verifica se a pasta existe, se não, cria (útil na primeira execução)
 if not os.path.exists(os.path.join(os.getenv('APPDATA'), nome_app)):
     os.makedirs(os.path.join(os.getenv('APPDATA'), nome_app))
 
@@ -16,14 +17,17 @@ print(f"Buscando credenciais em: {caminho_creds}")
 gc = gspread.service_account(filename=caminho_creds)
 
 wks = gc.open("AutComprasMaster").sheet1
+wks2 = gc.open("AutComprasMaster").worksheet("Fornecedores")
 
 def main(page: ft.Page):
     page.title = "AutCompraSystem"
-    page.add(ft.Text(value="SISTEMA DE AUTORIZACAO DE COMPRAS", align=ft.Alignment.CENTER))
+    page.add(ft.Text(value="SISTEMA DE AUTORIZACAO DE COMPRAS\n", align=ft.Alignment.CENTER))
     
     #CAMPOS DE TEXTO
     data = datetime.now().strftime("%d/%m/%Y")
-    fornecedor = ft.TextField(label = "Fornecedor: ", align=ft.Alignment.CENTER)
+    fornecedor = ft.Dropdown(label = "Fornecedor: ", editable=True, options=[
+        ft.DropdownOption(row[1]) for row in pd.DataFrame(wks2.get_all_records()).itertuples()
+    ], align=ft.Alignment.CENTER)
     orcamento = ft.TextField(label = "Número do orçamento: ", align=ft.Alignment.CENTER)
     placa = ft.TextField(label = "Placa: ", align=ft.Alignment.CENTER)
     km = ft.TextField(label = "KM: ", align=ft.Alignment.CENTER)
@@ -64,7 +68,17 @@ def main(page: ft.Page):
 
     benviar = ft.Button("Enviar", on_click=enviar, align=ft.Alignment.CENTER)
     
-    page.add(fornecedor, orcamento, placa, km, valor_pecas, valor_mao_de_obra, observacao)
+    layout = ft.Column([
+        # primeira linha
+        ft.Row([fornecedor, orcamento]),
+
+        # demais linhas
+        ft.Row([placa, km]),
+        ft.Row([valor_pecas, valor_mao_de_obra]),
+        ft.Row([observacao]),
+    ], spacing=10)
+
+    page.add(layout)
     page.add(benviar)
 
 ft.run(main)
