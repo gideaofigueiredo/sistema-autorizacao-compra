@@ -160,7 +160,7 @@ cython_debug/
 #.idea/
 
 # Flet
-!pasta_dos_pdfs/.gitkeep
+!storage/.gitkeep
 *.pdf
 
 # Credenciais do Google
