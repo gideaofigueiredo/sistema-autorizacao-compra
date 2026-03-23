@@ -2,11 +2,15 @@ from fpdf import FPDF, XPos, YPos
 from fpdf.enums import CellBordersLayout
 from fpdf.fonts import FontFace
 from datetime import datetime
+import json
 
 def gerar_pdf(dados: dict):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=10) 
+
+    with open("storage/dados_usuario.json", "r", encoding="utf-8") as f:
+        dados_padrao = json.load(f)
 
     pdf.image("src/assets/logo.svg", x=11, y=12, w=33)
 
@@ -14,14 +18,14 @@ def gerar_pdf(dados: dict):
     with pdf.table(gutter_height=3, gutter_width=3) as table:
         row = table.row()
         row.cell("")
-        row.cell("Sistema de Autorização", colspan=3,align="C")
+        row.cell(f"{dados_padrao[0]['empresa']}\nSistema de Autorização", colspan=3,align="C")
         row.cell(f"Nº {dados['numero']}", align="C")
 
     pdf.ln(3)
     pdf.set_font("helvetica", size=10)
     with pdf.table(headings_style=FontFace(emphasis=None)) as table:
         row = table.row()
-        row.cell(f" Emitido por: Fulano de Tal")
+        row.cell(f" Emitido por: {dados_padrao[1]['comprador']}")
         row.cell(f" Data de emissão: {datetime.now().strftime('%d/%m/%Y')} às {datetime.now().strftime('%H:%M:%S')}")
 
     pdf.set_font("helvetica", size=14, style="B")
@@ -86,6 +90,6 @@ def gerar_pdf(dados: dict):
 
     pdf.set_y(-25)
     pdf.set_font("helvetica", size=8)
-    pdf.write(text="Informações do rodapé: CNPJ, endereço, telefone, etc.")
+    pdf.write(text=f"{dados_padrao[2]['rodape']}")
 
     pdf.output(f"storage/Autorizacão de Compra {dados['numero']}.pdf")
