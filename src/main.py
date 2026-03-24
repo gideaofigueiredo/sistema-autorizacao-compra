@@ -21,7 +21,24 @@ wks2 = gc.open("AutComprasMaster").worksheet("Fornecedores")
 
 def main(page: ft.Page):
     page.title = "AutCompraSystem"
-    page.add(ft.Text(value="SISTEMA DE AUTORIZACAO DE COMPRAS\n", align=ft.Alignment.CENTER))
+    page.appbar = ft.AppBar(
+            leading_width=40,
+            title=ft.Text("Sistema de Autorização de Compras"),
+            center_title=False,
+            bgcolor=ft.Colors.BLUE_500,
+            actions=[
+                ft.IconButton(ft.icons.Icons.HISTORY, tooltip="Histórico de Registros"),
+                ft.IconButton(ft.icons.Icons.PEOPLE, tooltip="Gerenciar Fornecedores"),
+                ft.IconButton(ft.icons.Icons.TEXT_SNIPPET_OUTLINED, tooltip="Cadastros"),
+                ft.PopupMenuButton(
+                    items=[
+                        ft.PopupMenuItem("Perfil"),
+                        ft.PopupMenuItem(),  # divisor
+                        ft.PopupMenuItem("Sair"),
+                    ]
+                ),
+            ],
+        )
     
     #CAMPOS DE TEXTO
     data = datetime.now().strftime("%d/%m/%Y")
