@@ -39,18 +39,19 @@ def main(page: ft.Page):
                 ),
             ],
         )
-    
+    titulo_pagina = ft.Text("\nNova autorização de compra", size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_500, align=ft.Alignment.CENTER)
+    subtitulo_pagina = ft.Text("Preencha todos os campos obrigatórios para gerar a autorização\n\n", size=16, color=ft.Colors.GREY_700, align=ft.Alignment.CENTER)
     #CAMPOS DE TEXTO
     data = datetime.now().strftime("%d/%m/%Y")
     fornecedor = ft.Dropdown(label = "Fornecedor: ", editable=True, options=[
         ft.DropdownOption(row[1]) for row in pd.DataFrame(wks2.get_all_records()).itertuples()
-    ], expand=False, menu_height=300)
-    orcamento = ft.TextField(label = "Número do orçamento: ")
-    placa = ft.TextField(label = "Placa: ")
-    km = ft.TextField(label = "KM: ")
-    valor_pecas = ft.TextField(label = "Valor das peças: ", input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]", replacement_string=""))
-    valor_mao_de_obra = ft.TextField(label = "Valor da mão de obra: ")
-    observacao = ft.TextField(label = "Observações: ")
+    ], expand=False, menu_height=300, width=500)
+    orcamento = ft.TextField(label = "Número do orçamento: ", width=500)
+    placa = ft.TextField(label = "Placa: ", width=500)
+    km = ft.TextField(label = "KM: ", width=500)
+    valor_pecas = ft.TextField(label = "Valor das peças: ", width=500,input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]", replacement_string=""))
+    valor_mao_de_obra = ft.TextField(label = "Valor da mão de obra: ", width=500)
+    observacao = ft.TextField(label = "Observações: ", width=1010, multiline=True, max_lines=3)
 
     #BOTAO DE ENVIO
     def enviar(e):
@@ -83,16 +84,16 @@ def main(page: ft.Page):
         valor_mao_de_obra.value = ""
         observacao.value = ""
 
-    benviar = ft.Button("Enviar", on_click=enviar, align=ft.Alignment.CENTER)
+    benviar = ft.Button("Enviar", on_click=enviar, icon=ft.icons.Icons.SEND)
     
     layout = ft.Column([
-        ft.Row([fornecedor, orcamento]),
-        ft.Row([placa, km]),
-        ft.Row([valor_pecas, valor_mao_de_obra]),
+        ft.Row([fornecedor, orcamento], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([placa, km], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([valor_pecas, valor_mao_de_obra], alignment=ft.MainAxisAlignment.CENTER),
         ft.Row([observacao], alignment=ft.MainAxisAlignment.CENTER),
-    ], spacing=20, width=600)
+        ft.Row([benviar], alignment=ft.MainAxisAlignment.CENTER)
+    ], spacing=20, expand=True)
 
-    page.add(layout)
-    page.add(benviar)
+    page.add(titulo_pagina, subtitulo_pagina, layout)
 
 ft.run(main)
