@@ -27,8 +27,8 @@ def main(page: ft.Page):
             center_title=False,
             bgcolor=ft.Colors.BLUE_500,
             actions=[
-                ft.IconButton(ft.icons.Icons.HISTORY, tooltip="Histórico de Registros"),
-                ft.IconButton(ft.icons.Icons.PEOPLE, tooltip="Gerenciar Fornecedores"),
+                ft.IconButton(ft.icons.Icons.HISTORY, tooltip="Histórico"),
+                ft.IconButton(ft.icons.Icons.PEOPLE, tooltip="Fornecedores"),
                 ft.IconButton(ft.icons.Icons.TEXT_SNIPPET_OUTLINED, tooltip="Cadastros"),
                 ft.PopupMenuButton(
                     items=[
@@ -44,13 +44,13 @@ def main(page: ft.Page):
     data = datetime.now().strftime("%d/%m/%Y")
     fornecedor = ft.Dropdown(label = "Fornecedor: ", editable=True, options=[
         ft.DropdownOption(row[1]) for row in pd.DataFrame(wks2.get_all_records()).itertuples()
-    ], expand=False, menu_height=300, align=ft.Alignment.CENTER)
-    orcamento = ft.TextField(label = "Número do orçamento: ", align=ft.Alignment.CENTER)
-    placa = ft.TextField(label = "Placa: ", align=ft.Alignment.CENTER)
-    km = ft.TextField(label = "KM: ", align=ft.Alignment.CENTER)
-    valor_pecas = ft.TextField(label = "Valor das peças: ", input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]", replacement_string=""),align=ft.Alignment.CENTER)
-    valor_mao_de_obra = ft.TextField(label = "Valor da mão de obra: ", align=ft.Alignment.CENTER)
-    observacao = ft.TextField(label = "Observações: ", align=ft.Alignment.CENTER)
+    ], expand=False, menu_height=300)
+    orcamento = ft.TextField(label = "Número do orçamento: ")
+    placa = ft.TextField(label = "Placa: ")
+    km = ft.TextField(label = "KM: ")
+    valor_pecas = ft.TextField(label = "Valor das peças: ", input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]", replacement_string=""))
+    valor_mao_de_obra = ft.TextField(label = "Valor da mão de obra: ")
+    observacao = ft.TextField(label = "Observações: ")
 
     #BOTAO DE ENVIO
     def enviar(e):
@@ -86,14 +86,11 @@ def main(page: ft.Page):
     benviar = ft.Button("Enviar", on_click=enviar, align=ft.Alignment.CENTER)
     
     layout = ft.Column([
-        # primeira linha
         ft.Row([fornecedor, orcamento]),
-
-        # demais linhas
         ft.Row([placa, km]),
         ft.Row([valor_pecas, valor_mao_de_obra]),
-        ft.Row([observacao]),
-    ], spacing=10)
+        ft.Row([observacao], alignment=ft.MainAxisAlignment.CENTER),
+    ], spacing=20, width=600)
 
     page.add(layout)
     page.add(benviar)
