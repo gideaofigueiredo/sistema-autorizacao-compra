@@ -21,7 +21,7 @@ wks = gc.open("AutComprasMaster").sheet1
 wks2 = gc.open("AutComprasMaster").worksheet("Fornecedores")
 
 ROUTES = {
-    "/": None,  # view principal definida inline
+    "/": None,
     "/historico": historico,
     "/fornecedores": fornecedores,
     "/cadastros": cadastros,

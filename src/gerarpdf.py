@@ -18,14 +18,14 @@ def gerar_pdf(dados: dict):
     with pdf.table(gutter_height=3, gutter_width=3) as table:
         row = table.row()
         row.cell("")
-        row.cell(f"{dados_padrao[0]['empresa']}\nSistema de Autorização", colspan=3,align="C")
+        row.cell(f"{dados_padrao['empresa']}\nSistema de Autorização", colspan=3,align="C")
         row.cell(f"Nº {dados['numero']}", align="C")
 
     pdf.ln(3)
     pdf.set_font("helvetica", size=10)
     with pdf.table(headings_style=FontFace(emphasis=None)) as table:
         row = table.row()
-        row.cell(f" Emitido por: {dados_padrao[1]['comprador']}")
+        row.cell(f" Emitido por: {dados_padrao['comprador']}")
         row.cell(f" Data de emissão: {datetime.now().strftime('%d/%m/%Y')} às {datetime.now().strftime('%H:%M:%S')}")
 
     pdf.set_font("helvetica", size=14, style="B")
@@ -90,6 +90,6 @@ def gerar_pdf(dados: dict):
 
     pdf.set_y(-25)
     pdf.set_font("helvetica", size=8)
-    pdf.write(text=f"{dados_padrao[2]['rodape']}")
+    pdf.write(text=f"{dados_padrao['rodape']}")
 
     pdf.output(f"storage/Autorizacão de Compra {dados['numero']}.pdf")
