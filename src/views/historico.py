@@ -1,6 +1,14 @@
 import flet as ft
 
-def main(page: ft.Page):
-    page.add(ft.Text("Histórico"))
+def historico(page: ft.Page):
+    return ft.View(
+        route="/historico",
+        controls=[
+            ft.AppBar(
+                title=ft.Text("Histórico"),
+                bgcolor=ft.Colors.SURFACE_BRIGHT
+        ),
+        ft.Text("Página de Histórico"),
+    ]
 
-ft.run(main)
+)

@@ -1,6 +1,14 @@
 import flet as ft
 
-def main(page: ft.Page):
-    page.add(ft.Text("Histórico"))
+def fornecedores(page: ft.Page):
+    return ft.View(
+        route="/fornecedores",
+        controls=[
+            ft.AppBar(
+                title=ft.Text("Fornecedores"),
+                bgcolor=ft.Colors.SURFACE_BRIGHT
+        ),
+        ft.Text("Página de Fornecedores"),
+    ]
 
-ft.run(main)
+)

@@ -1,7 +1,14 @@
 import flet as ft
 
-def main(page: ft.Page):
-    page.add(ft.Text("Cadastros"))
-    page.add(ft.Text(f"Initial route: {page.route}"))
+def cadastros(page: ft.Page):
+    return ft.View(
+        route="/cadastros",
+        controls=[
+            ft.AppBar(
+                title=ft.Text("Cadastros"),
+                bgcolor=ft.Colors.SURFACE_BRIGHT
+        ),
+        ft.Text("Página de Cadastros"),
+    ]
 
-ft.run(main)
+)
