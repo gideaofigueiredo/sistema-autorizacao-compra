@@ -1,6 +1,5 @@
-[
-    {"empresa": "Empresa S.A."},
-    {"comprador": "Fulano de Tal"},
-    {"rodape": "Rua dos Bobos, 0 - CNPJ: 00.000.000/0000-00 - Telefone: (00) 0000-0000"}
-
-]
+{
+    "empresa": "Teste 1",
+    "comprador": "Teste 2",
+    "rodape": "Teste 3"
+}
