@@ -23,7 +23,7 @@ def cadastros(page: ft.Page):
                 title=ft.Text("Cadastros"),
                 bgcolor=ft.Colors.SURFACE_BRIGHT
         ),
-        ft.Text("Página de Cadastros"),
+        ft.Text("Textos padrão para os documentos gerados"),
         empresa,
         comprador,
         rodape,
