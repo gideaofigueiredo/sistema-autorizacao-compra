@@ -42,12 +42,52 @@ class DBManager:
             )
         ''')
         
+        # Add mes_ano column if it doesn't exist
+        try:
+            self.cursor.execute("ALTER TABLE controle_sequencia ADD COLUMN mes_ano TEXT")
+        except sqlite3.OperationalError:
+            pass
+            
+        # Tabela para fornecedores offline
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS fornecedores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome_razao_social TEXT,
+                cpf_cnpj TEXT,
+                sincronizado INTEGER DEFAULT 0
+            )
+        ''')
+        
         # Inicializa o controle de sequencia se estiver em branco
         self.cursor.execute("SELECT COUNT(*) FROM controle_sequencia")
         if self.cursor.fetchone()[0] == 0:
-            self.cursor.execute("INSERT INTO controle_sequencia (id, ultimo_numero) VALUES (1, 0)")
+            self.cursor.execute("INSERT INTO controle_sequencia (id, ultimo_numero, mes_ano) VALUES (1, 0, ?)", (datetime.now().strftime("%m%y"),))
             
         self.conn.commit()
+        self._importar_csv_fornecedores()
+
+    def _importar_csv_fornecedores(self):
+        self.cursor.execute("SELECT COUNT(*) FROM fornecedores")
+        if self.cursor.fetchone()[0] == 0:
+            caminho_forn = "storage/AutComprasMaster - Fornecedores.csv"
+            if os.path.exists(caminho_forn):
+                import pandas as pd
+                try:
+                    df_forn = pd.read_csv(caminho_forn, encoding="utf-8", sep=",")
+                    df_forn = df_forn.fillna("")
+                    for row in df_forn.itertuples(index=False):
+                        try:
+                            nome = str(row.nome_razao_social)
+                            cpf_cnpj = str(row.cpf_cnpj)
+                        except AttributeError:
+                            continue
+                        self.cursor.execute('''
+                            INSERT INTO fornecedores (nome_razao_social, cpf_cnpj, sincronizado) 
+                            VALUES (?, ?, 1)
+                        ''', (nome, cpf_cnpj))
+                    self.conn.commit()
+                except Exception:
+                    pass
 
     def obter_e_incrementar_numero_local(self):
         """
@@ -57,28 +97,20 @@ class DBManager:
         """
         mes_ano_atual = datetime.now().strftime("%m%y")
         
-        # Precisamos saber se já estamos no mesmo prefixo
-        # Podemos olhar a última autorização gerada hoje ou olhar a tabela controle_sequencia.
-        # Mas para simplificar, se o mês vira, recomeçamos de 1.
-        self.cursor.execute("SELECT numero_gerado FROM autorizacoes ORDER BY id DESC LIMIT 1")
+        self.cursor.execute("SELECT mes_ano, ultimo_numero FROM controle_sequencia WHERE id = 1")
         resultado = self.cursor.fetchone()
         
-        ultimo_contador = 0
-        if resultado:
-            ultimo_numero_str = resultado[0] # Ex: "0326-001"
-            if ultimo_numero_str.startswith(mes_ano_atual):
-                try:
-                    ultimo_contador = int(ultimo_numero_str.split('-')[1])
-                except ValueError:
-                    ultimo_contador = 0
-            else:
-                # Mudou o mês/ano, reinicia o contador
-                ultimo_contador = 0
+        mes_ano_banco = resultado[0] if resultado else None
+        ultimo_contador = resultado[1] if resultado else 0
         
-        proximo_contador = ultimo_contador + 1
+        if mes_ano_banco == mes_ano_atual:
+            proximo_contador = ultimo_contador + 1
+        else:
+            # Virou o mês, resetamos contador para 1
+            proximo_contador = 1
         
         # Atualiza a tabela controle_sequencia para registro geral
-        self.cursor.execute("UPDATE controle_sequencia SET ultimo_numero = ? WHERE id = 1", (proximo_contador,))
+        self.cursor.execute("UPDATE controle_sequencia SET ultimo_numero = ?, mes_ano = ? WHERE id = 1", (proximo_contador, mes_ano_atual))
         self.conn.commit()
         
         numero_formatado = f"{mes_ano_atual}-{str(proximo_contador).zfill(3)}"
@@ -117,6 +149,28 @@ class DBManager:
     def marcar_como_sincronizado(self, obj_id):
         """Seta o status de sincronizado como true/1 no banco."""
         self.cursor.execute("UPDATE autorizacoes SET sincronizado = 1 WHERE id = ?", (obj_id,))
+        self.conn.commit()
+
+    # --- FORNECEDORES ---
+    def salvar_fornecedor_local(self, nome_razao_social: str, cpf_cnpj: str):
+        self.cursor.execute('''
+            INSERT INTO fornecedores (nome_razao_social, cpf_cnpj, sincronizado)
+            VALUES (?, ?, 0)
+        ''', (nome_razao_social, cpf_cnpj))
+        self.conn.commit()
+
+    def obter_todos_fornecedores(self):
+        self.cursor.execute("SELECT * FROM fornecedores ORDER BY nome_razao_social ASC")
+        colunas = [desc[0] for desc in self.cursor.description]
+        return [dict(zip(colunas, linha)) for linha in self.cursor.fetchall()]
+
+    def obter_fornecedores_pendentes(self):
+        self.cursor.execute("SELECT * FROM fornecedores WHERE sincronizado = 0 ORDER BY id ASC")
+        colunas = [desc[0] for desc in self.cursor.description]
+        return [dict(zip(colunas, linha)) for linha in self.cursor.fetchall()]
+
+    def marcar_fornecedor_sincronizado(self, obj_id):
+        self.cursor.execute("UPDATE fornecedores SET sincronizado = 1 WHERE id = ?", (obj_id,))
         self.conn.commit()
 
     def fechar_conexao(self):

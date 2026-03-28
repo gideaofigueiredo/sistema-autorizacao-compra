@@ -19,7 +19,7 @@ if not os.path.exists(os.path.join(os.getenv('APPDATA'), nome_app)):
 
 def obter_planilha_master():
     gc = gspread.service_account(filename=caminho_creds)
-    return gc.open("AutComprasMaster").sheet1
+    return gc.open("AutComprasMaster")
 
 ROUTES = {
     "/": None,
@@ -67,29 +67,48 @@ def main(page: ft.Page):
     def sincronizar_dados(e):
         mostrar_mensagem(page, "Iniciando sincronização com Google Sheets...")
         
-        pendentes = db.obter_pendentes_sincronizacao()
-        if not pendentes:
+        pendentes_auth = db.obter_pendentes_sincronizacao()
+        pendentes_forn = db.obter_fornecedores_pendentes()
+        
+        if not pendentes_auth and not pendentes_forn:
             mostrar_mensagem(page, "Tudo já está sincronizado!")
             return
             
         try:
-            wks = obter_planilha_master()
-            for registro in pendentes:
-                linha = [
-                    registro["numero_gerado"],
-                    registro["data"],
-                    registro["fornecedor"],
-                    registro["orcamento"],
-                    registro["placa"],
-                    registro["km"],
-                    f"{registro['valor_pecas']:.2f}".replace(".", ","),
-                    f"{registro['valor_mao_de_obra']:.2f}".replace(".", ","),
-                    registro["observacao"]
-                ]
-                wks.insert_row(linha, index=2)
-                db.marcar_como_sincronizado(registro["id"])
+            planilha = obter_planilha_master()
+            if pendentes_auth:
+                wks = planilha.sheet1
+                for registro in pendentes_auth:
+                    linha = [
+                        registro["numero_gerado"],
+                        registro["data"],
+                        registro["fornecedor"],
+                        registro["orcamento"],
+                        registro["placa"],
+                        registro["km"],
+                        f"{registro['valor_pecas']:.2f}".replace(".", ","),
+                        f"{registro['valor_mao_de_obra']:.2f}".replace(".", ","),
+                        registro["observacao"]
+                    ]
+                    wks.insert_row(linha, index=2)
+                    db.marcar_como_sincronizado(registro["id"])
+            
+            if pendentes_forn:
+                wks_forn = planilha.worksheet("Fornecedores")
+                for registro_f in pendentes_forn:
+                    linha_f = [
+                        registro_f["nome_razao_social"],
+                        registro_f["cpf_cnpj"]
+                    ]
+                    # The user requested to append at the top (index=2) for fornecedores as well
+                    wks_forn.insert_row(linha_f, index=2)
+                    db.marcar_fornecedor_sincronizado(registro_f["id"])
+                    
+            msgs_sucesso = []
+            if pendentes_auth: msgs_sucesso.append(f"{len(pendentes_auth)} autorização(ões)")
+            if pendentes_forn: msgs_sucesso.append(f"{len(pendentes_forn)} fornecedor(es)")
                 
-            mostrar_mensagem(page, f"{len(pendentes)} registro(s) sincronizado(s) com sucesso!", ft.Colors.GREEN_600)
+            mostrar_mensagem(page, f"{', '.join(msgs_sucesso)} sincronizado(s) com sucesso!", ft.Colors.GREEN_600)
             
         except Exception as ex:
             mostrar_mensagem(page, f"Erro ao sincronizar: {str(ex)}", ft.Colors.RED_600)
@@ -119,20 +138,13 @@ def main(page: ft.Page):
     def build_home_view() -> ft.View:
         data = datetime.now().strftime("%d/%m/%Y")
         
-        # Carregar fornecedores do arquivo local para funcionar offline
+        # Carregar fornecedores do banco de dados local para funcionar offline
         opcoes_forn = []
-        caminho_forn = "storage/AutComprasMaster - Fornecedores.csv"
-        if os.path.exists(caminho_forn):
-            try:
-                df_forn = pd.read_csv(caminho_forn, encoding="utf-8", sep=",")
-                df_forn = df_forn.fillna("")
-                # Usando iterrows para iterar de maneira segura independente do nome da coluna exata.
-                # Como str(row.nome_razao_social) é usado em fornecedores.py, 
-                # sabemos que nome_razao_social deve existir.
-                if 'nome_razao_social' in df_forn.columns:
-                    opcoes_forn = [ft.DropdownOption(str(row.nome_razao_social)) for row in df_forn.itertuples()]
-            except Exception:
-                pass
+        try:
+            fornecedores_db = db.obter_todos_fornecedores()
+            opcoes_forn = [ft.DropdownOption(f["nome_razao_social"]) for f in fornecedores_db if f.get("nome_razao_social")]
+        except Exception:
+            pass
 
         fornecedor = ft.Dropdown(
             label="Fornecedor:",
