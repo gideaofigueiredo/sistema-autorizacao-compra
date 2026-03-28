@@ -55,6 +55,9 @@ def gerar_pdf(dados: dict):
         row.cell(f" {dados['placa']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
         row.cell(f" {dados['km']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.RIGHT)
 
+    def format_brl(valor):
+        return f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
     pdf.ln(10)
     with pdf.table() as table:
         row = table.row()
@@ -65,8 +68,8 @@ def gerar_pdf(dados: dict):
         row.cell("Valor da Mão de Obra", align="C")
 
         row = table.row()
-        row.cell(f"R$ {dados['valor_pecas']}", align="C")
-        row.cell(f"R$ {dados['valor_mao_de_obra']}", align="C")
+        row.cell(f"R$ {format_brl(dados['valor_pecas'])}", align="C")
+        row.cell(f"R$ {format_brl(dados['valor_mao_de_obra'])}", align="C")
 
     pdf.ln(10)
     with pdf.table() as table:
@@ -74,7 +77,8 @@ def gerar_pdf(dados: dict):
         row.cell("Valor total autorizado", colspan=2, border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT, align="C")
 
         row = table.row()
-        row.cell(f"R$ {float(dados['valor_pecas']) + float(dados['valor_mao_de_obra'])}", colspan=2,align="C")
+        total_value = dados.get('total_autorizado', float(dados['valor_pecas']) + float(dados['valor_mao_de_obra']))
+        row.cell(f"R$ {format_brl(total_value)}", colspan=2,align="C")
 
     pdf.ln(10)
     with pdf.table() as table:

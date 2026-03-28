@@ -164,6 +164,7 @@ cython_debug/
 *.pdf
 teste.py
 AutComprasMaster - Fornecedores.csv
+storage/banco_autcompras.sqlite
 
 # Credenciais do Google
 creds.json

@@ -5,6 +5,7 @@ from datetime import datetime
 from gerarpdf import gerar_pdf
 import os
 import pandas as pd
+from db_manager import db
 
 from views.historico import historico
 from views.fornecedores import fornecedores
@@ -16,9 +17,9 @@ caminho_creds = os.path.join(os.getenv('APPDATA'), nome_app, "creds.json")
 if not os.path.exists(os.path.join(os.getenv('APPDATA'), nome_app)):
     os.makedirs(os.path.join(os.getenv('APPDATA'), nome_app))
 
-gc = gspread.service_account(filename=caminho_creds)
-wks = gc.open("AutComprasMaster").sheet1
-wks2 = gc.open("AutComprasMaster").worksheet("Fornecedores")
+def obter_planilha_master():
+    gc = gspread.service_account(filename=caminho_creds)
+    return gc.open("AutComprasMaster").sheet1
 
 ROUTES = {
     "/": None,
@@ -27,14 +28,78 @@ ROUTES = {
     "/cadastros": cadastros,
 }
 
+def mascara_moeda(e):
+    valor = e.control.value
+    apenas_numeros = ''.join(filter(str.isdigit, valor))
+    if not apenas_numeros:
+        e.control.value = ""
+        e.control.update()
+        return
+    inteiro = int(apenas_numeros)
+    texto_formatado = f"{inteiro / 100:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    e.control.value = texto_formatado
+    e.control.update()
+
+def converter_para_float(valor_str):
+    if not valor_str:
+        return 0.0
+    return float(valor_str.replace(".", "").replace(",", "."))
+
+def mostrar_mensagem(page, texto, cor=None):
+    snack = ft.SnackBar(content=ft.Text(texto), bgcolor=cor)
+    if hasattr(page, "overlay"):
+        page.overlay.append(snack)
+        snack.open = True
+    elif hasattr(page, "open"):
+        page.open(snack)
+    else:
+        page.snack_bar = snack
+        page.snack_bar.open = True
+    page.update()
+
 def main(page: ft.Page):
     page.title = "AutCompraSystem"
+    try:
+        page.window.maximized = True
+    except AttributeError:
+        page.window_maximized = True
+
+    def sincronizar_dados(e):
+        mostrar_mensagem(page, "Iniciando sincronização com Google Sheets...")
+        
+        pendentes = db.obter_pendentes_sincronizacao()
+        if not pendentes:
+            mostrar_mensagem(page, "Tudo já está sincronizado!")
+            return
+            
+        try:
+            wks = obter_planilha_master()
+            for registro in pendentes:
+                linha = [
+                    registro["numero_gerado"],
+                    registro["data"],
+                    registro["fornecedor"],
+                    registro["orcamento"],
+                    registro["placa"],
+                    registro["km"],
+                    f"{registro['valor_pecas']:.2f}".replace(".", ","),
+                    f"{registro['valor_mao_de_obra']:.2f}".replace(".", ","),
+                    registro["observacao"]
+                ]
+                wks.insert_row(linha, index=2)
+                db.marcar_como_sincronizado(registro["id"])
+                
+            mostrar_mensagem(page, f"{len(pendentes)} registro(s) sincronizado(s) com sucesso!", ft.Colors.GREEN_600)
+            
+        except Exception as ex:
+            mostrar_mensagem(page, f"Erro ao sincronizar: {str(ex)}", ft.Colors.RED_600)
 
     def build_appbar() -> ft.AppBar:
         return ft.AppBar(
             title=ft.Text("Sistema de Autorização de Compras"),
             bgcolor=ft.Colors.BLUE_500,
             actions=[
+                ft.IconButton(ft.Icons.SYNC, tooltip="Sincronizar Planilha", on_click=sincronizar_dados),
                 ft.IconButton(ft.Icons.HISTORY, tooltip="Histórico",
                     on_click=lambda e: asyncio.ensure_future(page.push_route("/historico"))),
                 ft.IconButton(ft.Icons.PEOPLE, tooltip="Fornecedores",
@@ -53,42 +118,77 @@ def main(page: ft.Page):
 
     def build_home_view() -> ft.View:
         data = datetime.now().strftime("%d/%m/%Y")
+        
+        # Carregar fornecedores do arquivo local para funcionar offline
+        opcoes_forn = []
+        caminho_forn = "storage/AutComprasMaster - Fornecedores.csv"
+        if os.path.exists(caminho_forn):
+            try:
+                df_forn = pd.read_csv(caminho_forn, encoding="utf-8", sep=",")
+                df_forn = df_forn.fillna("")
+                # Usando iterrows para iterar de maneira segura independente do nome da coluna exata.
+                # Como str(row.nome_razao_social) é usado em fornecedores.py, 
+                # sabemos que nome_razao_social deve existir.
+                if 'nome_razao_social' in df_forn.columns:
+                    opcoes_forn = [ft.DropdownOption(str(row.nome_razao_social)) for row in df_forn.itertuples()]
+            except Exception:
+                pass
+
         fornecedor = ft.Dropdown(
             label="Fornecedor:",
             editable=True,
-            options=[ft.DropdownOption(row[1]) for row in pd.DataFrame(wks2.get_all_records()).itertuples()],
+            options=opcoes_forn,
             menu_height=300,
             width=500,
         )
         orcamento = ft.TextField(label="Número do orçamento:", width=500)
         placa = ft.TextField(label="Placa:", width=500)
         km = ft.TextField(label="KM:", width=500)
+        
         valor_pecas = ft.TextField(
             label="Valor das peças:",
             width=500,
-            input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9]", replacement_string=""),
+            on_change=mascara_moeda,
+            prefix=ft.Text("R$ ")
         )
-        valor_mao_de_obra = ft.TextField(label="Valor da mão de obra:", width=500)
+        valor_mao_de_obra = ft.TextField(
+            label="Valor da mão de obra:",
+            width=500,
+            on_change=mascara_moeda,
+            prefix=ft.Text("R$ ")
+        )
         observacao = ft.TextField(label="Observações:", width=1010, multiline=True, max_lines=3)
 
         def enviar(e):
-            ultimo_numero = str(int(wks.cell(2, 1).value[-3:]) + 1).zfill(3)
-            numero = f"{datetime.now().strftime('%m%y')}-{ultimo_numero}"
+            if not fornecedor.value:
+                mostrar_mensagem(page, "Fornecedor é obrigatório!", ft.Colors.RED_500)
+                return
 
-            wks.insert_row([
-                numero, data, fornecedor.value, orcamento.value,
-                placa.value, km.value, valor_pecas.value,
-                valor_mao_de_obra.value, observacao.value
-            ], index=2)
-
-            gerar_pdf({
-                "numero": numero, "data": data,
-                "fornecedor": fornecedor.value, "orcamento": orcamento.value,
-                "placa": placa.value, "km": km.value,
-                "valor_pecas": valor_pecas.value,
-                "valor_mao_de_obra": valor_mao_de_obra.value,
+            numero = db.obter_e_incrementar_numero_local()
+            
+            p_float = converter_para_float(valor_pecas.value)
+            mo_float = converter_para_float(valor_mao_de_obra.value)
+            total = p_float + mo_float
+            
+            dados = {
+                "numero": numero,
+                "data": data,
+                "fornecedor": fornecedor.value,
+                "orcamento": orcamento.value,
+                "placa": placa.value,
+                "km": km.value,
+                "valor_pecas": p_float,
+                "valor_mao_de_obra": mo_float,
+                "total_autorizado": total,
                 "observacao": observacao.value,
-            })
+            }
+
+            try:
+                db.salvar_autorizacao_local(dados)
+                gerar_pdf(dados)
+                mostrar_mensagem(page, "Autorização gerada e salva offline com sucesso!", ft.Colors.GREEN_600)
+            except Exception as ex:
+                mostrar_mensagem(page, f"Erro ao salvar: {str(ex)}", ft.Colors.RED_500)
 
             for campo in [fornecedor, orcamento, placa, km, valor_pecas, valor_mao_de_obra, observacao]:
                 campo.value = ""
