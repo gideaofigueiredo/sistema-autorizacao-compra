@@ -63,7 +63,7 @@ def fornecedores(page: ft.Page):
             ft.Container(
                 content=ft.Column([
                     ft.Text("Cadastrar Novo Fornecedor", size=20, weight=ft.FontWeight.BOLD),
-                    ft.Row([nome_input, cpf_cnpj_input, ft.ElevatedButton("Cadastrar", on_click=cadastrar, icon=ft.Icons.SAVE)]),
+                    ft.Row([nome_input, cpf_cnpj_input, ft.Button("Cadastrar", on_click=cadastrar, icon=ft.Icons.SAVE)]),
                     ft.Divider(),
                     ft.Text("Fornecedores Cadastrados", size=20, weight=ft.FontWeight.BOLD),
                     lista_fornecedores

@@ -1,5 +1,7 @@
 import flet as ft
 import json
+import os
+from utils_path import get_base_path
 
 def cadastros(page: ft.Page):
     empresa = ft.TextField(label="Empresa:")
@@ -7,7 +9,7 @@ def cadastros(page: ft.Page):
     rodape = ft.TextField(label="Rodapé:")
 
     def salvar_dados(e):
-        with open("storage/dados_usuario.json", "w", encoding='utf-8') as f:
+        with open(os.path.join(get_base_path(), "storage", "dados_usuario.json"), "w", encoding='utf-8') as f:
             json.dump({
                 "empresa": empresa.value,
                 "comprador": comprador.value,
@@ -27,6 +29,6 @@ def cadastros(page: ft.Page):
         empresa,
         comprador,
         rodape,
-        ft.ElevatedButton("Salvar", on_click=salvar_dados)
+        ft.Button("Salvar", on_click=salvar_dados)
     ]
 )

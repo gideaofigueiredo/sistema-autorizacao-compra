@@ -4,18 +4,18 @@ import asyncio
 from datetime import datetime
 from gerarpdf import gerar_pdf
 import os
-import pandas as pd
 from db_manager import db
+import pathlib
+import webbrowser
+import subprocess
+from utils_path import get_base_path, get_data_path, get_documents_path
 
 from views.historico import historico
 from views.fornecedores import fornecedores
 from views.cadastros import cadastros
 
 nome_app = "AutCompraSystem"
-caminho_creds = os.path.join(os.getenv('APPDATA'), nome_app, "creds.json")
-
-if not os.path.exists(os.path.join(os.getenv('APPDATA'), nome_app)):
-    os.makedirs(os.path.join(os.getenv('APPDATA'), nome_app))
+caminho_creds = os.path.join(get_data_path(), "creds.json")
 
 def obter_planilha_master():
     gc = gspread.service_account(filename=caminho_creds)
@@ -113,11 +113,36 @@ def main(page: ft.Page):
         except Exception as ex:
             mostrar_mensagem(page, f"Erro ao sincronizar: {str(ex)}", ft.Colors.RED_600)
 
+    def restaurar_dados_nuvem(e):
+        mostrar_mensagem(page, "Restaurando dados do Google Sheets. Aguarde...")
+        try:
+            planilha = obter_planilha_master()
+            wks = planilha.sheet1
+            wks_forn = planilha.worksheet("Fornecedores")
+            
+            auth_rows = wks.get_all_values()[1:] # Pula cabeçalho
+            forn_rows = wks_forn.get_all_values()[1:]
+            
+            db.sincronizar_de_nuvem(auth_rows, forn_rows)
+            mostrar_mensagem(page, "Dados restaurados da nuvem com sucesso!", ft.Colors.GREEN_600)
+            
+            page.views.clear()
+            page.views.append(build_home_view())
+            page.update()
+        except Exception as ex:
+            mostrar_mensagem(page, f"Erro ao restaurar: {str(ex)}", ft.Colors.RED_600)
+
+    def abrir_pasta_configuracao(e):
+        path = get_data_path()
+        subprocess.Popen(f'explorer "{path}"')
+        mostrar_mensagem(page, "Pasta de configurações aberta.")
+
     def build_appbar() -> ft.AppBar:
         return ft.AppBar(
             title=ft.Text("Sistema de Autorização de Compras"),
             bgcolor=ft.Colors.BLUE_500,
             actions=[
+                ft.IconButton(ft.Icons.FOLDER_SPECIAL, tooltip="Configurações (Logotipo)", on_click=abrir_pasta_configuracao),
                 ft.IconButton(ft.Icons.SYNC, tooltip="Sincronizar Planilha", on_click=sincronizar_dados),
                 ft.IconButton(ft.Icons.HISTORY, tooltip="Histórico",
                     on_click=lambda e: asyncio.ensure_future(page.push_route("/historico"))),
@@ -127,6 +152,7 @@ def main(page: ft.Page):
                     on_click=lambda e: asyncio.ensure_future(page.push_route("/cadastros"))),
                 ft.PopupMenuButton(
                     items=[
+                        ft.PopupMenuItem("Restaurar do Google Sheets", icon=ft.Icons.CLOUD_DOWNLOAD, on_click=restaurar_dados_nuvem),
                         ft.PopupMenuItem("Perfil"),
                         ft.PopupMenuItem(),
                         ft.PopupMenuItem("Sair"),
@@ -145,6 +171,8 @@ def main(page: ft.Page):
             opcoes_forn = [ft.DropdownOption(f["nome_razao_social"]) for f in fornecedores_db if f.get("nome_razao_social")]
         except Exception:
             pass
+            
+        ultimo_gerado_container = ft.Container(visible=False)
 
         fornecedor = ft.Dropdown(
             label="Fornecedor:",
@@ -199,6 +227,19 @@ def main(page: ft.Page):
                 db.salvar_autorizacao_local(dados)
                 gerar_pdf(dados)
                 mostrar_mensagem(page, "Autorização gerada e salva offline com sucesso!", ft.Colors.GREEN_600)
+                
+                # Exibe a última gerada logo abaixo do formulário
+                arquivo_path = pathlib.Path(os.path.join(get_documents_path(), f"Autorização de Compra {numero}.pdf"))
+                ultimo_gerado_container.visible = True
+                ultimo_gerado_container.content = ft.Column([
+                    ft.Text("\nÚltima Autorização Gerada:", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_500),
+                    ft.Row([
+                        ft.Text(f"{arquivo_path.name}"),
+                        ft.Button("Abrir Arquivo", icon=ft.Icons.FILE_OPEN, on_click=lambda e: webbrowser.open(arquivo_path.resolve().as_uri())),
+                        ft.Button("Abrir Pasta", icon=ft.Icons.FOLDER_OPEN, on_click=lambda e: subprocess.Popen(f'explorer /select,"{arquivo_path.resolve()}"'))
+                    ], alignment=ft.MainAxisAlignment.CENTER)
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                
             except Exception as ex:
                 mostrar_mensagem(page, f"Erro ao salvar: {str(ex)}", ft.Colors.RED_500)
 
@@ -225,6 +266,8 @@ def main(page: ft.Page):
                     ft.Row([
                         ft.Button("Enviar", on_click=enviar, icon=ft.Icons.SEND)
                     ], alignment=ft.MainAxisAlignment.CENTER),
+                    ultimo_gerado_container,
+                    ft.Container(height=40) # Espaço adicional final
                 ], spacing=20, scroll=ft.ScrollMode.AUTO),
             ],
         )

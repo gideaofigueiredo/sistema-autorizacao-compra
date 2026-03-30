@@ -3,18 +3,41 @@ from fpdf.enums import CellBordersLayout
 from fpdf.fonts import FontFace
 from datetime import datetime
 import json
+import os
+from utils_path import get_base_path, get_data_path, get_documents_path
 
 def gerar_pdf(dados: dict):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=10) 
 
-    with open("storage/dados_usuario.json", "r", encoding="utf-8") as f:
-        dados_padrao = json.load(f)
+    # Carrega JSON (prioriza AppData, faz fallback para storage padrão do sistema)
+    json_appdata = os.path.join(get_data_path(), "dados_usuario.json")
+    if os.path.exists(json_appdata):
+        with open(json_appdata, "r", encoding="utf-8") as f:
+            dados_padrao = json.load(f)
+    else:
+        json_fallback = os.path.join(get_base_path(), "storage", "dados_usuario.json")
+        if os.path.exists(json_fallback):
+            with open(json_fallback, "r", encoding="utf-8") as f:
+                dados_padrao = json.load(f)
+        else:
+            dados_padrao = {"empresa": "Nome da Empresa", "comprador": "Comprador Padrão", "rodape": "Rodapé Padrão"}
 
-    pdf.image("src/assets/logo.svg", x=11, y=12, w=33)
+    # Carrega Logo (prioriza logo.png ou logo.jpg no AppData, fallback para logo.svg do app)
+    logo_appdata_png = os.path.join(get_data_path(), "logo.png")
+    logo_appdata_jpg = os.path.join(get_data_path(), "logo.jpg")
+    
+    if os.path.exists(logo_appdata_png):
+        pdf.image(logo_appdata_png, x=11, y=12, w=33)
+    elif os.path.exists(logo_appdata_jpg):
+        pdf.image(logo_appdata_jpg, x=11, y=12, w=33)
+    else:
+        logo_fallback = os.path.join(get_base_path(), "src", "assets", "logo.svg")
+        if os.path.exists(logo_fallback):
+            pdf.image(logo_fallback, x=11, y=12, w=33)
 
-    pdf.set_font("helvetica", size=14)
+    pdf.set_font("helvetica", size=12)
     with pdf.table(gutter_height=3, gutter_width=3) as table:
         row = table.row()
         row.cell("")
@@ -28,14 +51,14 @@ def gerar_pdf(dados: dict):
         row.cell(f" Emitido por: {dados_padrao['comprador']}")
         row.cell(f" Data de emissão: {datetime.now().strftime('%d/%m/%Y')} às {datetime.now().strftime('%H:%M:%S')}")
 
-    pdf.set_font("helvetica", size=14, style="B")
+    pdf.set_font("helvetica", size=12, style="B")
     pdf.ln(10)
     pdf.cell(190, 10,text="Autorização de Compra", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
-    pdf.set_font("helvetica", size=12)
+    pdf.set_font("helvetica", size=10)
     pdf.cell(190, 10, text="Documento oficial para liberação de serviços", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
 
     pdf.ln(10)
-    pdf.set_font("helvetica", size=12)
+    pdf.set_font("helvetica", size=10)
     with pdf.table() as table:
         row = table.row()
         row.cell(" Fornecedor", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
@@ -96,4 +119,5 @@ def gerar_pdf(dados: dict):
     pdf.set_font("helvetica", size=8)
     pdf.write(text=f"{dados_padrao['rodape']}")
 
-    pdf.output(f"storage/Autorizacão de Compra {dados['numero']}.pdf")
+    output_path = os.path.join(get_documents_path(), f"Autorização de Compra {dados['numero']}.pdf")
+    pdf.output(output_path)

@@ -3,11 +3,13 @@ from pathlib import Path
 import datetime
 import webbrowser
 import subprocess
+import os
+from utils_path import get_base_path
 
 def historico(page: ft.Page):
 
     pdf_files = sorted(
-        Path("storage/").glob("*.pdf"),
+        Path(os.path.join(get_base_path(), "storage")).glob("*.pdf"),
         key=lambda f: f.stat().st_mtime,
         reverse=True
     )
@@ -22,10 +24,10 @@ def historico(page: ft.Page):
         ft.Column([
             ft.Row([
                 ft.Text(f"Arquivo: {pdf_file.name} - {datetime.datetime.fromtimestamp(pdf_file.stat().st_mtime)}"),
-                ft.ElevatedButton(
+                ft.Button(
                     "Abrir",
                     on_click=lambda e, f=pdf_file: webbrowser.open(f.resolve().as_uri())),
-                ft.ElevatedButton(
+                ft.Button(
                     "Abrir pasta",
                     on_click=lambda e, f=pdf_file: subprocess.Popen(f"explorer /select,\"{f.resolve()}\"")
                 )
