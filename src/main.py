@@ -65,13 +65,17 @@ def main(page: ft.Page):
         page.window_maximized = True
 
     def sincronizar_dados(e):
+        page.splash = ft.ProgressBar()
+        page.update()
         mostrar_mensagem(page, "Iniciando sincronização com Google Sheets...")
         
         pendentes_auth = db.obter_pendentes_sincronizacao()
         pendentes_forn = db.obter_fornecedores_pendentes()
         
         if not pendentes_auth and not pendentes_forn:
+            page.splash = None
             mostrar_mensagem(page, "Tudo já está sincronizado!")
+            page.update()
             return
             
         try:
@@ -112,8 +116,13 @@ def main(page: ft.Page):
             
         except Exception as ex:
             mostrar_mensagem(page, f"Erro ao sincronizar: {str(ex)}", ft.Colors.RED_600)
+        finally:
+            page.splash = None
+            page.update()
 
     def restaurar_dados_nuvem(e):
+        page.splash = ft.ProgressBar()
+        page.update()
         mostrar_mensagem(page, "Restaurando dados do Google Sheets. Aguarde...")
         try:
             planilha = obter_planilha_master()
@@ -131,6 +140,9 @@ def main(page: ft.Page):
             page.update()
         except Exception as ex:
             mostrar_mensagem(page, f"Erro ao restaurar: {str(ex)}", ft.Colors.RED_600)
+        finally:
+            page.splash = None
+            page.update()
 
     def abrir_pasta_configuracao(e):
         path = get_data_path()
