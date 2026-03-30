@@ -4,12 +4,12 @@ import datetime
 import webbrowser
 import subprocess
 import os
-from utils_path import get_base_path
+from utils_path import get_documents_path
 
 def historico(page: ft.Page):
 
     pdf_files = sorted(
-        Path(os.path.join(get_base_path(), "storage")).glob("*.pdf"),
+        Path(get_documents_path()).glob("*.pdf"),
         key=lambda f: f.stat().st_mtime,
         reverse=True
     )
