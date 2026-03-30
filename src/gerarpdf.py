@@ -37,11 +37,12 @@ def gerar_pdf(dados: dict):
         if os.path.exists(logo_fallback):
             pdf.image(logo_fallback, x=11, y=12, w=33)
 
-    pdf.set_font("helvetica", size=12)
+    pdf.set_font("helvetica", size=13)
     with pdf.table(gutter_height=3, gutter_width=3) as table:
         row = table.row()
         row.cell("")
         row.cell(f"{dados_padrao['empresa']}\nSistema de Autorização", colspan=3,align="C")
+        pdf.set_font("helvetica", size=12, style="B")
         row.cell(f"Nº {dados['numero']}", align="C")
 
     pdf.ln(3)
