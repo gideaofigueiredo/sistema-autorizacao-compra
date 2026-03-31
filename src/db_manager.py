@@ -150,6 +150,40 @@ class DBManager:
         colunas = [desc[0] for desc in self.cursor.description]
         return [dict(zip(colunas, linha)) for linha in self.cursor.fetchall()]
 
+    def obter_ultimas_autorizacoes(self, limite=50):
+        """Busca as últimas N autorizações do banco"""
+        self.cursor.execute('''
+            SELECT * FROM autorizacoes ORDER BY id DESC LIMIT ?
+        ''', (limite,))
+        colunas = [desc[0] for desc in self.cursor.description]
+        return [dict(zip(colunas, linha)) for linha in self.cursor.fetchall()]
+
+    def atualizar_autorizacao_local(self, id_registro, dados: dict):
+        """Atualiza uma autorização local (quando editada via painel) mantém/volta o sincronizado pra 0"""
+        self.cursor.execute('''
+            UPDATE autorizacoes SET
+                fornecedor = ?, orcamento = ?, placa = ?, km = ?,
+                valor_pecas = ?, valor_mao_de_obra = ?, total_autorizado = ?, observacao = ?
+            WHERE id = ?
+        ''', (
+            dados.get("fornecedor"),
+            dados.get("orcamento"),
+            dados.get("placa"),
+            dados.get("km"),
+            dados.get("valor_pecas"),
+            dados.get("valor_mao_de_obra"),
+            dados.get("total_autorizado"),
+            dados.get("observacao"),
+            id_registro
+        ))
+        self.conn.commit()
+
+    def excluir_autorizacao(self, id_registro):
+        """Remove a autorização do banco local (usado apenas se sincronizado == 0)"""
+        # Exclui registro
+        self.cursor.execute("DELETE FROM autorizacoes WHERE id = ?", (id_registro,))
+        self.conn.commit()
+
     def marcar_como_sincronizado(self, obj_id):
         """Seta o status de sincronizado como true/1 no banco."""
         self.cursor.execute("UPDATE autorizacoes SET sincronizado = 1 WHERE id = ?", (obj_id,))
