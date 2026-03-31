@@ -24,24 +24,27 @@ def gerar_pdf(dados: dict):
         else:
             dados_padrao = {"empresa": "Nome da Empresa", "comprador": "Comprador Padrão", "rodape": "Rodapé Padrão"}
 
-    # Carrega Logo (prioriza logo.png ou logo.jpg no AppData, fallback para logo.svg do app)
     logo_appdata_png = os.path.join(get_data_path(), "logo.png")
     logo_appdata_jpg = os.path.join(get_data_path(), "logo.jpg")
     
+    logo_path = None
     if os.path.exists(logo_appdata_png):
-        pdf.image(logo_appdata_png, x=11, y=12, w=33)
+        logo_path = logo_appdata_png
     elif os.path.exists(logo_appdata_jpg):
-        pdf.image(logo_appdata_jpg, x=11, y=12, w=33)
+        logo_path = logo_appdata_jpg
     else:
         logo_fallback = os.path.join(get_base_path(), "src", "assets", "logo.svg")
         if os.path.exists(logo_fallback):
-            pdf.image(logo_fallback, x=11, y=12, w=33)
+            logo_path = logo_fallback
 
     pdf.set_font("helvetica", size=13)
     with pdf.table(gutter_height=3, gutter_width=3) as table:
         row = table.row()
-        row.cell("")
-        row.cell(f"{dados_padrao['empresa']}\nSistema de Autorização", colspan=3,align="C")
+        if logo_path:
+            row.cell("", img=logo_path, img_fill_width=True, align="C")
+        else:
+            row.cell("")
+        row.cell(f"{dados_padrao['empresa']}\nAutorização de Compra", colspan=3,align="C")
         pdf.set_font("helvetica", size=12, style="B")
         row.cell(f"Nº {dados['numero']}", align="C")
 
@@ -49,45 +52,45 @@ def gerar_pdf(dados: dict):
     pdf.set_font("helvetica", size=10)
     with pdf.table(headings_style=FontFace(emphasis=None)) as table:
         row = table.row()
-        row.cell(f" Emitido por: {dados_padrao['comprador']}")
-        row.cell(f" Data de emissão: {datetime.now().strftime('%d/%m/%Y')} às {datetime.now().strftime('%H:%M:%S')}")
+        row.cell(f"Emitido por: {dados_padrao['comprador']}")
+        row.cell(f"Data de emissão: {datetime.now().strftime('%d/%m/%Y')} às {datetime.now().strftime('%H:%M:%S')}")
 
     pdf.set_font("helvetica", size=12, style="B")
     pdf.ln(10)
-    pdf.cell(190, 10,text="Autorização de Compra", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
+    pdf.cell(190, 10,text="Dados da Autorização", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
     pdf.set_font("helvetica", size=10)
     pdf.cell(190, 10, text="Documento oficial para liberação de serviços", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
 
     pdf.ln(10)
     pdf.set_font("helvetica", size=10)
     with pdf.table() as table:
-        row = table.row()
-        row.cell(" Fornecedor", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
-        row.cell(" Nº do orçamento:", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
+        row = table.row(style=FontFace(fill_color=(178, 178, 178)))
+        row.cell("Fornecedor:", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
+        row.cell("Nº do orçamento:", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
 
         row = table.row()
-        row.cell(f" {dados['fornecedor']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
-        row.cell(f" {dados['orcamento']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.RIGHT)
+        row.cell(f"{dados['fornecedor']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
+        row.cell(f"{dados['orcamento']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.RIGHT)
 
     pdf.ln(5)
     with pdf.table() as table:
-        row = table.row()
-        row.cell(" Placa do veículo", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
-        row.cell(" Quilometragem", border=CellBordersLayout.RIGHT | CellBordersLayout.TOP)
+        row = table.row(style=FontFace(fill_color=(178, 178, 178)))
+        row.cell("Placa do veículo:", border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
+        row.cell("Quilometragem:", border=CellBordersLayout.RIGHT | CellBordersLayout.TOP)
 
         row = table.row()
-        row.cell(f" {dados['placa']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
-        row.cell(f" {dados['km']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.RIGHT)
+        row.cell(f"{dados['placa']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.LEFT | CellBordersLayout.RIGHT)
+        row.cell(f"{dados['km']}", border=CellBordersLayout.BOTTOM | CellBordersLayout.RIGHT)
 
     def format_brl(valor):
         return f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
     pdf.ln(10)
     with pdf.table() as table:
-        row = table.row()
+        row = table.row(style=FontFace(fill_color=(178, 178, 178)))
         row.cell("Detalhamento de valores", colspan=2, border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT, align="C")
 
-        row = table.row()
+        row = table.row(style=FontFace(emphasis="B", fill_color=(220, 220, 220)))
         row.cell("Valor das Peças", align="C")
         row.cell("Valor da Mão de Obra", align="C")
 
@@ -97,7 +100,7 @@ def gerar_pdf(dados: dict):
 
     pdf.ln(10)
     with pdf.table() as table:
-        row = table.row()
+        row = table.row(style=FontFace(fill_color=(178, 178, 178)))
         row.cell("Valor total autorizado", colspan=2, border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT, align="C")
 
         row = table.row()
@@ -106,7 +109,7 @@ def gerar_pdf(dados: dict):
 
     pdf.ln(10)
     with pdf.table() as table:
-        row = table.row()
+        row = table.row(style=FontFace(fill_color=(178, 178, 178)))
         row.cell("Observações", colspan=2, border=CellBordersLayout.TOP | CellBordersLayout.LEFT | CellBordersLayout.RIGHT, align="C")
 
         row = table.row()
@@ -114,9 +117,9 @@ def gerar_pdf(dados: dict):
     
     pdf.ln(5)
     pdf.set_font("helvetica", size=10)
-    pdf.write(text="Solicitamos que o número da Ordem de Compra (OC) seja informado na nota fiscal.")
+    pdf.write(text="Favor informar o número da Autorização de Compra na nota fiscal.")
 
-    pdf.set_y(-25)
+    pdf.set_y(-20)
     pdf.set_font("helvetica", size=8)
     pdf.write(text=f"{dados_padrao['rodape']}")
 
