@@ -1,63 +1,20 @@
-# Autcompra app
+# AutCompraSystem 🚗📦
 
-Aplicativo para emissão de autorização de compra
+O **AutCompraSystem** é um aplicativo desktop desenvolvido com Python e Flet, projetado para facilitar a emissão, gestão e organização de autorizações de compra de peças e serviços automotivos.
 
-## Run the app
+## ✨ Funcionalidades
 
-### uv
+- **Emissão de Autorizações**: Geração de documentos com numeração sequencial automática por mês/ano (ex: 0324-001).
+- **Geração de PDF**: Criação automática de PDFs formatados com logotipo personalizado e detalhes do fornecedor, veículo e valores.
+- **Gestão de Fornecedores**: Cadastro local de fornecedores.
+- **Sincronização em Nuvem**: Integração bidirecional com o Google Sheets (Planilha) para backup e centralização de dados.
+- **Modo Offline**: Utiliza SQLite local para permitir o uso sem internet, sincronizando os dados posteriormente.
+- **Histórico**: Acesso rápido aos documentos PDF gerados anteriormente.
 
-Run as a desktop app:
+## 🛠️ Tecnologias Utilizadas
 
-```
-uv run flet run
-```
-
-Run as a web app:
-
-```
-uv run flet run --web
-```
-
-For more details on running the app, refer to the [Getting Started Guide](https://docs.flet.dev/).
-
-## Build the app
-
-### Android
-
-```
-flet build apk -v
-```
-
-For more details on building and signing `.apk` or `.aab`, refer to the [Android Packaging Guide](https://docs.flet.dev/publish/android/).
-
-### iOS
-
-```
-flet build ipa -v
-```
-
-For more details on building and signing `.ipa`, refer to the [iOS Packaging Guide](https://docs.flet.dev/publish/ios/).
-
-### macOS
-
-```
-flet build macos -v
-```
-
-For more details on building macOS package, refer to the [macOS Packaging Guide](https://docs.flet.dev/publish/macos/).
-
-### Linux
-
-```
-flet build linux -v
-```
-
-For more details on building Linux package, refer to the [Linux Packaging Guide](https://docs.flet.dev/publish/linux/).
-
-### Windows
-
-```
-flet build windows -v
-```
-
-For more details on building Windows package, refer to the [Windows Packaging Guide](https://docs.flet.dev/publish/windows/).
+- **Linguagem**: [Python 3.10+](cite: 3)
+- **Framework UI**: [Flet](cite: 3) (Flutter para Python)
+- **Base de Dados**: SQLite
+- **PDF**: FPDF2
+- **Integração**: GSpread (Google Sheets API)
