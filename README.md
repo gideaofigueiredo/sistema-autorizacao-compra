@@ -2,6 +2,8 @@
 
 O **AutCompraSystem** é um aplicativo desktop desenvolvido com Python e Flet, projetado para facilitar a emissão, gestão e organização de autorizações de compra de peças e serviços automotivos.
 
+<img width="1913" height="980" alt="image" src="https://github.com/user-attachments/assets/f75e4236-468c-4d4e-8771-a853a28d3744" />
+
 ## ✨ Funcionalidades
 
 - **Emissão de Autorizações**: Geração de documentos com numeração sequencial automática por mês/ano (ex: 0324-001).
