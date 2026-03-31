@@ -1,14 +1,16 @@
 [project]
 name = "autcomprasystem"
-version = "0.1.0"
-description = ""
+version = "0.1.2"
+description = "Aplicativo para emissão de autorização de compra com modo offline e sincronização cloud"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-    { name = "Flet developer", email = "you@example.com" }
+    { name = "Gideão Figueiredo", email = "gideao.figueiredo@hotmail.com" }
 ]
 dependencies = [
-  "flet>=0.80.2"
+  "flet>=0.80.2",
+  "gspread", # Utilizado em main.py para integração com Google Sheets
+  "fpdf2", # Utilizado em gerarpdf.py para criação dos documentos
 ]
 
 [dependency-groups]
