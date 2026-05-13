@@ -6,7 +6,7 @@ O **AutCompraSystem** é um aplicativo desktop desenvolvido com Python e Flet, p
 
 ## 💡 Contexto e Motivação
 
-Devido à falta de suporte e flexibilidade por parte da empresa responsável pelo sistema ERP atual da organização em que trabalho, o departamento de compras enfrentava dificuldades na emissão de autorizações de compra. Como o módulo solicitado não foi implementado no ERP oficial, este aplicativo foi desenvolvido internamente para suprir essa lacuna, permitindo um controle ágil e independente das autorizações de compra.
+Devido à falta de suporte e flexibilidade por parte da empresa responsável pelo sistema ERP atual da organização em que trabalho, o departamento de compras enfrentava dificuldades na emissão de autorizações de compra. Como o módulo solicitado não foi implementado no ERP oficial, este aplicativo foi desenvolvido internamente para suprir essa lacuna temporariamente, permitindo um controle ágil e independente das autorizações de compra.
 
 ## ✨ Funcionalidades
 
